@@ -363,6 +363,9 @@ app.put('/api/landing-pages/:id', async (req, res) => {
     const { id } = req.params;
     const { name, description, slides, transitionDuration, isDefault, deviceIds } = req.body;
     
+    console.log(`📝 Updating landing page: ${id}`);
+    console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
+    
     const landingPage = await LandingPage.findById(id);
     if (!landingPage) {
       return res.status(404).json({ error: 'Landing page not found' });
@@ -373,13 +376,22 @@ app.put('/api/landing-pages/:id', async (req, res) => {
     if (transitionDuration !== undefined) landingPage.transitionDuration = transitionDuration;
     if (isDefault !== undefined) landingPage.isDefault = isDefault;
     
-    if (slides !== undefined) {
-      landingPage.slides = slides.map((slide, index) => ({
-        _id: slide.id || slide._id,
-        imageUrl: slide.imageUrl,
-        title: slide.title || '',
-        order: index
-      }));
+    if (slides !== undefined && Array.isArray(slides)) {
+      // Boş imageUrl'leri filtrele
+      const validSlides = slides.filter(slide => slide.imageUrl && slide.imageUrl.trim());
+      
+      landingPage.slides = validSlides.map((slide, index) => {
+        const slideData = {
+          imageUrl: slide.imageUrl.trim(),
+          title: slide.title || '',
+          description: slide.description || '',
+          order: index,
+          isActive: true
+        };
+        return slideData;
+      });
+      
+      console.log(`📷 Slides updated: ${landingPage.slides.length} valid slides`);
     }
     
     if (deviceIds !== undefined) {
@@ -387,6 +399,8 @@ app.put('/api/landing-pages/:id', async (req, res) => {
     }
     
     await landingPage.save();
+    
+    console.log(`✅ Landing page updated: ${landingPage.name}`);
     
     res.json({ 
       landingPage: {
@@ -399,8 +413,9 @@ app.put('/api/landing-pages/:id', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error updating landing page:', error);
-    res.status(500).json({ error: 'Failed to update landing page' });
+    console.error('Error updating landing page:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ error: 'Failed to update landing page', details: error.message });
   }
 });
 

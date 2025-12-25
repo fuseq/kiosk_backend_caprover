@@ -9,7 +9,8 @@ const mongoose = require('mongoose');
 const slideSchema = new mongoose.Schema({
   imageUrl: {
     type: String,
-    required: true
+    required: [true, 'Image URL is required'],
+    trim: true
   },
   title: {
     type: String,
@@ -31,7 +32,10 @@ const slideSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   }
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  _id: true // Mongoose otomatik _id oluşturur
+});
 
 const landingPageSchema = new mongoose.Schema({
   name: {
