@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -93,6 +93,10 @@
             <span>Yeni Ekle</span>
           </button>
         </div>
+        <button class="theme-toggle" id="themeToggle" title="Tema Değiştir">
+          <i class="ph ph-sun icon-sun"></i>
+          <i class="ph ph-moon icon-moon"></i>
+        </button>
         <div class="header-user">
           <div class="user-avatar">
             <i class="ph-fill ph-user"></i>
@@ -485,6 +489,38 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" id="cancelDeviceAssignBtn">İptal</button>
         <button type="button" class="btn btn-primary" id="saveDeviceAssignBtn">
+          <i class="ph ph-check"></i>
+          <span>Kaydet</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Device Name Edit Modal -->
+  <div class="modal-overlay" id="deviceNameModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="ph ph-pencil-simple"></i>
+          <span>Cihaz Adını Düzenle</span>
+        </h2>
+        <button class="modal-close" id="closeDeviceNameModal">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="deviceNameForm">
+          <input type="hidden" id="editDeviceId">
+          <div class="form-group">
+            <label class="form-label" for="editDeviceName">Cihaz Adı</label>
+            <input type="text" class="form-input" id="editDeviceName" placeholder="Örn: Giriş Kiosku" required>
+            <span class="form-hint">Bu isim yönetim panelinde görünecektir</span>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="cancelDeviceNameBtn">İptal</button>
+        <button type="submit" class="btn btn-primary" form="deviceNameForm">
           <i class="ph ph-check"></i>
           <span>Kaydet</span>
         </button>

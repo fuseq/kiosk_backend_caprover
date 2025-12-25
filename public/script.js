@@ -43,6 +43,7 @@ const elements = {
   pageTitle: document.getElementById('pageTitle'),
   pageBreadcrumb: document.getElementById('pageBreadcrumb'),
   primaryAction: document.getElementById('primaryAction'),
+  themeToggle: document.getElementById('themeToggle'),
   
   // Pages
   pages: {
@@ -94,6 +95,14 @@ const elements = {
   cancelDeviceAssignBtn: document.getElementById('cancelDeviceAssignBtn'),
   saveDeviceAssignBtn: document.getElementById('saveDeviceAssignBtn'),
   
+  // Device Name Edit Modal
+  deviceNameModal: document.getElementById('deviceNameModal'),
+  deviceNameForm: document.getElementById('deviceNameForm'),
+  editDeviceId: document.getElementById('editDeviceId'),
+  editDeviceName: document.getElementById('editDeviceName'),
+  closeDeviceNameModal: document.getElementById('closeDeviceNameModal'),
+  cancelDeviceNameBtn: document.getElementById('cancelDeviceNameBtn'),
+  
   // Settings
   apiEndpoint: document.getElementById('apiEndpoint'),
   
@@ -109,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initializeApp() {
+  initTheme();
   setupEventListeners();
   await refreshAllData();
   updateApiEndpoint();
@@ -117,10 +127,30 @@ async function initializeApp() {
   setInterval(refreshAllData, 30000);
 }
 
+// ============================================
+// Theme Management
+// ============================================
+function initTheme() {
+  const savedTheme = localStorage.getItem('inmapper-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  
+  html.setAttribute('data-theme', newTheme);
+  localStorage.setItem('inmapper-theme', newTheme);
+}
+
 function setupEventListeners() {
   // Sidebar
   elements.sidebarToggle?.addEventListener('click', toggleSidebar);
   elements.mobileMenuBtn?.addEventListener('click', toggleMobileSidebar);
+  
+  // Theme Toggle
+  elements.themeToggle?.addEventListener('click', toggleTheme);
   
   // Navigation
   elements.navItems.forEach(item => {
@@ -147,12 +177,20 @@ function setupEventListeners() {
   elements.cancelDeviceAssignBtn?.addEventListener('click', closeDeviceAssignModal);
   elements.saveDeviceAssignBtn?.addEventListener('click', saveDeviceAssignment);
   
+  // Device Name Edit Modal
+  elements.closeDeviceNameModal?.addEventListener('click', closeDeviceNameModal);
+  elements.cancelDeviceNameBtn?.addEventListener('click', closeDeviceNameModal);
+  elements.deviceNameForm?.addEventListener('submit', handleDeviceNameSubmit);
+  
   // Modal overlay click to close
   elements.landingPageModal?.addEventListener('click', (e) => {
     if (e.target === elements.landingPageModal) closeLandingPageModal();
   });
   elements.deviceAssignModal?.addEventListener('click', (e) => {
     if (e.target === elements.deviceAssignModal) closeDeviceAssignModal();
+  });
+  elements.deviceNameModal?.addEventListener('click', (e) => {
+    if (e.target === elements.deviceNameModal) closeDeviceNameModal();
   });
   
   // Search
@@ -412,7 +450,12 @@ function renderDevicesTable(filter = 'all', search = '') {
             <span class="status-badge ${device.status}">${getStatusText(device.status)}</span>
           </td>
           <td>
-            <strong>${escapeHtml(device.name || 'İsimsiz Cihaz')}</strong>
+            <div class="device-name-cell">
+              <span class="device-name-text">${escapeHtml(device.name || 'İsimsiz Cihaz')}</span>
+              <button class="device-name-edit-btn" onclick="openDeviceNameModal('${deviceId}')" title="Adı Düzenle">
+                <i class="ph ph-pencil-simple"></i>
+              </button>
+            </div>
           </td>
           <td>
             <span class="device-id">${deviceId?.substring(0, 8) || '-'}...</span>
@@ -606,6 +649,56 @@ async function deleteDevice(id) {
   } catch (error) {
     console.error('Error deleting device:', error);
     showToast('Silme işlemi başarısız', 'error');
+  }
+}
+
+// ============================================
+// Device Name Edit Functions
+// ============================================
+function openDeviceNameModal(deviceId) {
+  const device = state.devices.find(d => getId(d) === deviceId);
+  if (!device) return;
+  
+  if (elements.editDeviceId) elements.editDeviceId.value = deviceId;
+  if (elements.editDeviceName) elements.editDeviceName.value = device.name || '';
+  
+  elements.deviceNameModal?.classList.add('show');
+  elements.editDeviceName?.focus();
+}
+
+function closeDeviceNameModal() {
+  elements.deviceNameModal?.classList.remove('show');
+  elements.deviceNameForm?.reset();
+}
+
+async function handleDeviceNameSubmit(e) {
+  e.preventDefault();
+  
+  const deviceId = elements.editDeviceId?.value;
+  const newName = elements.editDeviceName?.value?.trim();
+  
+  if (!deviceId || !newName) {
+    showToast('Lütfen cihaz adı girin', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/devices/${deviceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName })
+    });
+    
+    if (response.ok) {
+      closeDeviceNameModal();
+      await refreshAllData();
+      showToast('Cihaz adı güncellendi', 'success');
+    } else {
+      throw new Error('Failed to update');
+    }
+  } catch (error) {
+    console.error('Error updating device name:', error);
+    showToast('Güncelleme başarısız', 'error');
   }
 }
 
@@ -932,6 +1025,7 @@ window.openLandingPageModal = openLandingPageModal;
 window.editLandingPage = editLandingPage;
 window.deleteLandingPage = deleteLandingPage;
 window.deleteDevice = deleteDevice;
+window.openDeviceNameModal = openDeviceNameModal;
 window.removeSlide = removeSlide;
 window.moveSlideUp = moveSlideUp;
 window.moveSlideDown = moveSlideDown;

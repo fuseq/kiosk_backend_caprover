@@ -107,3 +107,4 @@ db.landingpages.insertOne({
 print('✅ Database initialized successfully');
 print('📄 Default landing page created');
 
+
