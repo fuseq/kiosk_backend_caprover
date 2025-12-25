@@ -35,7 +35,6 @@ const state = {
 const elements = {
   // Sidebar
   sidebar: document.getElementById('sidebar'),
-  sidebarToggle: document.getElementById('sidebarToggle'),
   mobileMenuBtn: document.getElementById('mobileMenuBtn'),
   navItems: document.querySelectorAll('.nav-item'),
   
@@ -145,8 +144,7 @@ function toggleTheme() {
 }
 
 function setupEventListeners() {
-  // Sidebar
-  elements.sidebarToggle?.addEventListener('click', toggleSidebar);
+  // Mobile Sidebar
   elements.mobileMenuBtn?.addEventListener('click', toggleMobileSidebar);
   
   // Theme Toggle
@@ -246,10 +244,6 @@ function navigateTo(page) {
   
   // Close mobile sidebar
   elements.sidebar?.classList.remove('mobile-open');
-}
-
-function toggleSidebar() {
-  elements.sidebar?.classList.toggle('collapsed');
 }
 
 function toggleMobileSidebar() {

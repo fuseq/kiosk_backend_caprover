@@ -27,7 +27,6 @@
   
   /* Spacing */
   --sidebar-width: 280px;
-  --sidebar-collapsed: 80px;
   --header-height: 72px;
   
   /* Transitions */
@@ -213,21 +212,6 @@ body::before {
   display: flex;
   flex-direction: column;
   z-index: 100;
-  transition: width var(--transition-normal);
-  overflow: hidden;
-}
-
-.sidebar.collapsed {
-  width: var(--sidebar-collapsed);
-}
-
-.sidebar.collapsed .logo-text,
-.sidebar.collapsed .nav-item span,
-.sidebar.collapsed .nav-section-title,
-.sidebar.collapsed .status-info {
-  opacity: 0;
-  visibility: hidden;
-  width: 0;
   overflow: hidden;
 }
 
@@ -235,95 +219,31 @@ body::before {
   padding: 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   border-bottom: 1px solid var(--border);
-  min-height: 76px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  overflow: hidden;
+  gap: 0.75rem;
 }
 
-.logo-icon {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent-purple) 100%);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  color: white;
-  box-shadow: 0 4px 16px var(--primary-glow);
-  flex-shrink: 0;
+.logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
 }
 
 .logo-text {
   display: flex;
   flex-direction: column;
-  transition: opacity var(--transition-normal), visibility var(--transition-normal), width var(--transition-normal);
-  white-space: nowrap;
 }
 
 .logo-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-light) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.logo-subtitle {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.sidebar-toggle {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-  z-index: 10;
-}
-
-.sidebar.collapsed .sidebar-toggle {
-  right: 50%;
-  transform: translate(50%, -50%);
-}
-
-.sidebar-toggle:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  border-color: var(--border-light);
-}
-
-.sidebar-toggle i {
-  transition: transform var(--transition-normal);
-}
-
-.sidebar.collapsed .sidebar-toggle i {
-  transform: rotate(180deg);
+  letter-spacing: 0.02em;
 }
 
 .sidebar-nav {
@@ -363,9 +283,6 @@ body::before {
   letter-spacing: 0.1em;
   padding: 0 0.75rem;
   margin-bottom: 0.75rem;
-  transition: opacity var(--transition-normal), visibility var(--transition-normal);
-  white-space: nowrap;
-  overflow: hidden;
 }
 
 .nav-item {
@@ -391,8 +308,6 @@ body::before {
 
 .nav-item span {
   font-weight: 500;
-  transition: opacity var(--transition-normal), visibility var(--transition-normal);
-  overflow: hidden;
 }
 
 .nav-item:hover {
@@ -433,12 +348,6 @@ body::before {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.sidebar.collapsed .server-status {
-  justify-content: center;
-  padding: 0.75rem 0.5rem;
 }
 
 .status-indicator {
@@ -467,9 +376,6 @@ body::before {
 .status-info {
   display: flex;
   flex-direction: column;
-  transition: opacity var(--transition-normal), visibility var(--transition-normal), width var(--transition-normal);
-  overflow: hidden;
-  white-space: nowrap;
 }
 
 .status-label {
@@ -497,11 +403,6 @@ body::before {
   flex-direction: column;
   position: relative;
   z-index: 1;
-  transition: margin-left var(--transition-normal);
-}
-
-.sidebar.collapsed ~ .main-content {
-  margin-left: var(--sidebar-collapsed);
 }
 
 /* ============================================
