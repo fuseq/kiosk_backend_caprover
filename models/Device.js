@@ -15,6 +15,10 @@ const deviceInfoSchema = new mongoose.Schema({
 }, { _id: false });
 
 const deviceSchema = new mongoose.Schema({
+  _id: {
+    type: String,
+    default: () => new mongoose.Types.ObjectId().toString()
+  },
   fingerprint: {
     type: String,
     required: true,
@@ -93,18 +97,26 @@ deviceSchema.statics.updateLastSeen = async function(deviceId) {
 
 // Static method to find or create device by fingerprint
 deviceSchema.statics.findOrCreateByFingerprint = async function(fingerprint, deviceInfo = {}) {
+  // Önce mevcut cihazı bul (aktif veya pasif)
   let device = await this.findOne({ fingerprint });
   
   if (!device) {
+    // Yeni cihaz oluştur
     device = await this.create({
       fingerprint,
-      deviceInfo
+      deviceInfo,
+      isActive: true
     });
-    console.log(`✅ New device registered: ${device._id}`);
+    console.log(`✅ New device registered: ${device._id} (fingerprint: ${fingerprint})`);
   } else {
-    // Update device info and lastSeen
-    device.deviceInfo = { ...device.deviceInfo.toObject(), ...deviceInfo };
+    // Mevcut cihazı güncelle
+    console.log(`🔄 Existing device updated: ${device._id} (fingerprint: ${fingerprint})`);
+    
+    // deviceInfo'yu güvenli şekilde güncelle
+    const existingInfo = device.deviceInfo ? device.deviceInfo.toObject() : {};
+    device.deviceInfo = { ...existingInfo, ...deviceInfo };
     device.lastSeen = new Date();
+    device.isActive = true; // Tekrar aktif yap (silinmişse)
     await device.save();
   }
   

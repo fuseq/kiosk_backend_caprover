@@ -43,9 +43,9 @@ const landingPageSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  devices: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Device'
+  // Device ID'leri (String UUID formatında)
+  deviceIds: [{
+    type: String
   }],
   slides: [slideSchema],
   transitionDuration: {
@@ -89,7 +89,7 @@ const landingPageSchema = new mongoose.Schema({
 
 // Virtual for device count
 landingPageSchema.virtual('deviceCount').get(function() {
-  return this.devices ? this.devices.length : 0;
+  return this.deviceIds ? this.deviceIds.length : 0;
 });
 
 // Virtual for slide count
@@ -136,7 +136,7 @@ landingPageSchema.statics.getDefault = async function() {
 landingPageSchema.statics.getForDevice = async function(deviceId) {
   // First, try to find a landing page assigned to this device
   let landingPage = await this.findOne({
-    devices: deviceId,
+    deviceIds: deviceId,
     isActive: true
   });
   
@@ -149,19 +149,23 @@ landingPageSchema.statics.getForDevice = async function(deviceId) {
 };
 
 // Static method to assign devices to landing page
-landingPageSchema.statics.assignDevices = async function(landingPageId, deviceIds) {
-  // Remove devices from other landing pages
+landingPageSchema.statics.assignDevices = async function(landingPageId, newDeviceIds) {
+  console.log(`📋 Assigning devices to landing page ${landingPageId}:`, newDeviceIds);
+  
+  // Remove these devices from other landing pages
   await this.updateMany(
     { _id: { $ne: landingPageId } },
-    { $pull: { devices: { $in: deviceIds } } }
+    { $pull: { deviceIds: { $in: newDeviceIds } } }
   );
   
-  // Add devices to this landing page
+  // Update this landing page with new deviceIds (replace all)
   const landingPage = await this.findByIdAndUpdate(
     landingPageId,
-    { $addToSet: { devices: { $each: deviceIds } } },
+    { $set: { deviceIds: newDeviceIds } },
     { new: true }
-  ).populate('devices');
+  );
+  
+  console.log(`✅ Devices assigned. Total: ${landingPage?.deviceIds?.length || 0}`);
   
   return landingPage;
 };
@@ -169,7 +173,7 @@ landingPageSchema.statics.assignDevices = async function(landingPageId, deviceId
 // Indexes
 landingPageSchema.index({ isDefault: 1 });
 landingPageSchema.index({ isActive: 1 });
-landingPageSchema.index({ devices: 1 });
+landingPageSchema.index({ deviceIds: 1 });
 landingPageSchema.index({ createdAt: -1 });
 
 const LandingPage = mongoose.model('LandingPage', landingPageSchema);

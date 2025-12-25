@@ -136,8 +136,11 @@ app.get('/api/devices/:deviceId/config', async (req, res) => {
   try {
     const { deviceId } = req.params;
     
+    console.log(`📡 Config request for device: ${deviceId}`);
+    
     const device = await Device.findById(deviceId);
     if (!device) {
+      console.log(`❌ Device not found: ${deviceId}`);
       return res.status(404).json({ error: 'Device not found' });
     }
     
@@ -145,14 +148,15 @@ app.get('/api/devices/:deviceId/config', async (req, res) => {
     device.lastSeen = new Date();
     await device.save();
     
-    // Sadece bu cihaza atanmış landing page'i bul (varsayılan yok)
+    // Bu cihaza atanmış landing page'i bul (deviceIds arrayinde ara)
     const landingPage = await LandingPage.findOne({
-      devices: deviceId,
+      deviceIds: deviceId,
       isActive: true
     });
     
     // Cihaza atanmış landing page yoksa null döndür
     if (!landingPage) {
+      console.log(`⚠️ No landing page assigned to device: ${deviceId}`);
       return res.json({
         landingPage: null,
         isAssigned: false,
@@ -160,10 +164,16 @@ app.get('/api/devices/:deviceId/config', async (req, res) => {
       });
     }
     
+    console.log(`✅ Found landing page for device ${deviceId}: ${landingPage.name}`);
+    console.log(`📷 Slides count: ${landingPage.slides?.length || 0}`);
+    
     res.json({ 
       landingPage: {
         id: landingPage._id,
-        ...landingPage.toObject()
+        name: landingPage.name,
+        slides: landingPage.slides || [],
+        transitionDuration: landingPage.transitionDuration,
+        deviceIds: landingPage.deviceIds
       },
       isAssigned: true
     });
@@ -409,6 +419,8 @@ app.post('/api/landing-pages/:id/assign-devices', async (req, res) => {
     const { id } = req.params;
     const { deviceIds } = req.body;
     
+    console.log(`📥 Assign devices request for LP ${id}:`, deviceIds);
+    
     if (!Array.isArray(deviceIds)) {
       return res.status(400).json({ error: 'deviceIds must be an array' });
     }
@@ -419,11 +431,15 @@ app.post('/api/landing-pages/:id/assign-devices', async (req, res) => {
       return res.status(404).json({ error: 'Landing page not found' });
     }
     
+    console.log(`✅ Devices assigned to ${landingPage.name}:`, landingPage.deviceIds);
+    
     res.json({ 
       landingPage: {
         id: landingPage._id,
-        ...landingPage.toObject(),
-        deviceIds: landingPage.devices.map(d => d._id || d)
+        name: landingPage.name,
+        deviceIds: landingPage.deviceIds,
+        slides: landingPage.slides,
+        transitionDuration: landingPage.transitionDuration
       }
     });
   } catch (error) {
