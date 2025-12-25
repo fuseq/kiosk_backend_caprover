@@ -1025,3 +1025,4 @@ window.moveSlideUp = moveSlideUp;
 window.moveSlideDown = moveSlideDown;
 window.removeDeviceFromLP = removeDeviceFromLP;
 window.refreshAllData = refreshAllData;
+

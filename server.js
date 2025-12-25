@@ -39,12 +39,31 @@ app.use((req, res, next) => {
 
 // CORS configuration
 const corsOptions = {
-  origin: config.corsOrigins === '*' ? '*' : config.corsOrigins.split(','),
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow all origins in development or if CORS_ORIGINS is '*'
+    if (config.corsOrigins === '*') {
+      return callback(null, true);
+    }
+    
+    // Check against allowed origins
+    const allowedOrigins = config.corsOrigins.split(',').map(o => o.trim());
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Body parsing
 app.use(bodyParser.json({ limit: '10mb' }));
@@ -113,11 +132,16 @@ app.post('/api/devices/register', async (req, res) => {
   try {
     const { fingerprint, deviceInfo } = req.body;
     
+    console.log('📱 Device registration request:', { fingerprint, userAgent: deviceInfo?.userAgent?.substring(0, 50) });
+    console.log('🌐 Origin:', req.get('origin') || 'no-origin');
+    
     if (!fingerprint) {
       return res.status(400).json({ error: 'Fingerprint is required' });
     }
     
     const device = await Device.findOrCreateByFingerprint(fingerprint, deviceInfo);
+    
+    console.log('✅ Device registered/updated:', device._id);
     
     res.json({ 
       device: {
@@ -126,7 +150,7 @@ app.post('/api/devices/register', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error registering device:', error);
+    console.error('❌ Error registering device:', error);
     res.status(500).json({ error: 'Failed to register device' });
   }
 });
@@ -619,3 +643,4 @@ async function startServer() {
 
 // Start the server
 startServer();
+
