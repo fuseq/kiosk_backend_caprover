@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Inmapper Kiosk Yönetim Paneli - Landing Page ve Cihaz Yönetimi">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Inmapper Kiosk | Yönetim Paneli</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web@2.0.3"></script>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="ph-fill ph-map-trifold"></i>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">inMapper</span>
+          <span class="logo-subtitle">Kiosk Manager</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="ph ph-sidebar-simple"></i>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-title">Ana Menü</span>
+        <a href="#" class="nav-item active" data-page="dashboard">
+          <i class="ph ph-squares-four"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-page="landing-pages">
+          <i class="ph ph-presentation-chart"></i>
+          <span>Landing Pages</span>
+        </a>
+        <a href="#" class="nav-item" data-page="devices">
+          <i class="ph ph-devices"></i>
+          <span>Cihazlar</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <span class="nav-section-title">Sistem</span>
+        <a href="#" class="nav-item" data-page="settings">
+          <i class="ph ph-gear-six"></i>
+          <span>Ayarlar</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="server-status">
+        <div class="status-indicator online"></div>
+        <div class="status-info">
+          <span class="status-label">Sunucu Durumu</span>
+          <span class="status-value" id="serverStatus">Çevrimiçi</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+          <i class="ph ph-list"></i>
+        </button>
+        <div class="page-info">
+          <h1 class="page-title" id="pageTitle">Dashboard</h1>
+          <p class="page-breadcrumb" id="pageBreadcrumb">Ana Sayfa / Dashboard</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-actions">
+          <button class="btn btn-primary" id="primaryAction" style="display: none;">
+            <i class="ph ph-plus"></i>
+            <span>Yeni Ekle</span>
+          </button>
+        </div>
+        <div class="header-user">
+          <div class="user-avatar">
+            <i class="ph-fill ph-user"></i>
+          </div>
+          <span class="user-name">Admin</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content">
+      
+      <!-- Dashboard Page -->
+      <section class="page active" id="dashboardPage">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-icon blue">
+                <i class="ph-fill ph-devices"></i>
+              </div>
+              <div class="stat-trend up">
+                <i class="ph ph-trend-up"></i>
+                <span>+12%</span>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span class="stat-value" id="statTotalDevices">0</span>
+              <span class="stat-label">Toplam Cihaz</span>
+            </div>
+            <div class="stat-card-footer">
+              <span class="stat-description">Kayıtlı kiosk cihazları</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-icon green">
+                <i class="ph-fill ph-broadcast"></i>
+              </div>
+              <div class="stat-trend up">
+                <i class="ph ph-trend-up"></i>
+                <span>Aktif</span>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span class="stat-value" id="statActiveDevices">0</span>
+              <span class="stat-label">Çevrimiçi Cihaz</span>
+            </div>
+            <div class="stat-card-footer">
+              <span class="stat-description">Son 5 dakika içinde aktif</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-icon purple">
+                <i class="ph-fill ph-presentation-chart"></i>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span class="stat-value" id="statLandingPages">0</span>
+              <span class="stat-label">Landing Page</span>
+            </div>
+            <div class="stat-card-footer">
+              <span class="stat-description">Aktif yapılandırmalar</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-icon orange">
+                <i class="ph-fill ph-images"></i>
+              </div>
+            </div>
+            <div class="stat-card-body">
+              <span class="stat-value" id="statTotalSlides">0</span>
+              <span class="stat-label">Toplam Slide</span>
+            </div>
+            <div class="stat-card-footer">
+              <span class="stat-description">Tüm landing page'lerde</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Content Grid -->
+        <div class="dashboard-grid">
+          <!-- Recent Activity -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="ph ph-clock-counter-clockwise"></i>
+                Son Aktiviteler
+              </h3>
+              <button class="btn btn-ghost btn-sm">
+                <i class="ph ph-arrows-clockwise"></i>
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="activity-list" id="activityList">
+                <div class="activity-item">
+                  <div class="activity-icon blue">
+                    <i class="ph ph-device-mobile"></i>
+                  </div>
+                  <div class="activity-content">
+                    <span class="activity-text">Yeni cihaz kaydedildi</span>
+                    <span class="activity-time">2 dakika önce</span>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-icon green">
+                    <i class="ph ph-check-circle"></i>
+                  </div>
+                  <div class="activity-content">
+                    <span class="activity-text">Landing page güncellendi</span>
+                    <span class="activity-time">1 saat önce</span>
+                  </div>
+                </div>
+                <div class="activity-item">
+                  <div class="activity-icon purple">
+                    <i class="ph ph-image"></i>
+                  </div>
+                  <div class="activity-content">
+                    <span class="activity-text">3 yeni slide eklendi</span>
+                    <span class="activity-time">3 saat önce</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="ph ph-lightning"></i>
+                Hızlı İşlemler
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="quick-actions">
+                <button class="quick-action-btn" onclick="navigateTo('landing-pages'); openLandingPageModal();">
+                  <div class="quick-action-icon">
+                    <i class="ph ph-plus-circle"></i>
+                  </div>
+                  <span>Yeni Landing Page</span>
+                </button>
+                <button class="quick-action-btn" onclick="navigateTo('devices')">
+                  <div class="quick-action-icon">
+                    <i class="ph ph-devices"></i>
+                  </div>
+                  <span>Cihazları Görüntüle</span>
+                </button>
+                <button class="quick-action-btn" onclick="refreshAllData()">
+                  <div class="quick-action-icon">
+                    <i class="ph ph-arrows-clockwise"></i>
+                  </div>
+                  <span>Verileri Yenile</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Landing Pages Page -->
+      <section class="page" id="landingPagesPage">
+        <div class="page-toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <i class="ph ph-magnifying-glass"></i>
+              <input type="text" placeholder="Landing page ara..." id="landingPageSearch">
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary" id="newLandingPageBtn">
+              <i class="ph ph-plus"></i>
+              <span>Yeni Landing Page</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="landing-pages-grid" id="landingPagesList">
+          <!-- Landing pages will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="landingPagesEmpty" style="display: none;">
+          <div class="empty-state-icon">
+            <i class="ph ph-presentation-chart"></i>
+          </div>
+          <h3>Henüz Landing Page Yok</h3>
+          <p>İlk landing page'inizi oluşturarak başlayın</p>
+          <button class="btn btn-primary" onclick="openLandingPageModal()">
+            <i class="ph ph-plus"></i>
+            <span>Landing Page Oluştur</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Devices Page -->
+      <section class="page" id="devicesPage">
+        <div class="page-toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <i class="ph ph-magnifying-glass"></i>
+              <input type="text" placeholder="Cihaz ara..." id="deviceSearch">
+            </div>
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">Tümü</button>
+              <button class="filter-btn" data-filter="online">Çevrimiçi</button>
+              <button class="filter-btn" data-filter="offline">Çevrimdışı</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body no-padding">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Durum</th>
+                    <th>Cihaz Adı</th>
+                    <th>Cihaz ID</th>
+                    <th>Ekran Çözünürlüğü</th>
+                    <th>Son Görülme</th>
+                    <th>Landing Page</th>
+                    <th>İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody id="devicesTableBody">
+                  <!-- Devices will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="devicesEmpty" style="display: none;">
+          <div class="empty-state-icon">
+            <i class="ph ph-devices"></i>
+          </div>
+          <h3>Henüz Kayıtlı Cihaz Yok</h3>
+          <p>Kiosk cihazları bağlandığında otomatik olarak burada görünecekler</p>
+        </div>
+      </section>
+
+      <!-- Settings Page -->
+      <section class="page" id="settingsPage">
+        <div class="settings-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="ph ph-info"></i>
+                Sistem Bilgileri
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="info-list">
+                <div class="info-item">
+                  <span class="info-label">Versiyon</span>
+                  <span class="info-value">1.0.0</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Sunucu Durumu</span>
+                  <span class="info-value status-online">Çevrimiçi</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">API Endpoint</span>
+                  <span class="info-value code" id="apiEndpoint">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i class="ph ph-sliders-horizontal"></i>
+                Varsayılan Ayarlar
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">Varsayılan Geçiş Süresi (ms)</label>
+                <input type="number" class="form-input" value="8000" min="1000" step="1000">
+                <span class="form-hint">Slider geçiş süresi (milisaniye)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Landing Page Modal -->
+  <div class="modal-overlay" id="landingPageModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">
+          <i class="ph ph-presentation-chart"></i>
+          <span>Yeni Landing Page</span>
+        </h2>
+        <button class="modal-close" id="closeModal">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="landingPageForm">
+          <input type="hidden" id="landingPageId">
+          
+          <div class="form-group">
+            <label class="form-label" for="landingPageName">Landing Page Adı</label>
+            <input type="text" class="form-input" id="landingPageName" placeholder="Örn: Ana Giriş Kiosk" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="transitionDuration">
+              Geçiş Süresi
+              <span class="form-label-badge" id="durationDisplay">8 saniye</span>
+            </label>
+            <input type="range" class="form-range" id="transitionDuration" min="3000" max="30000" step="1000" value="8000">
+            <div class="form-range-labels">
+              <span>3s</span>
+              <span>30s</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Slider Görselleri
+              <span class="form-label-count" id="slideCount">0 görsel</span>
+            </label>
+            <div class="slides-container" id="slidesList">
+              <!-- Slides will be added here -->
+            </div>
+            <button type="button" class="btn btn-outline btn-block" id="addSlideBtn">
+              <i class="ph ph-plus"></i>
+              <span>Görsel Ekle</span>
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Atanmış Cihazlar
+              <span class="form-label-count" id="deviceCount">0 cihaz</span>
+            </label>
+            <div class="assigned-devices" id="assignedDevicesList">
+              <div class="empty-placeholder">
+                <i class="ph ph-devices"></i>
+                <span>Henüz cihaz atanmadı</span>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline btn-block" id="assignDevicesBtn">
+              <i class="ph ph-link"></i>
+              <span>Cihaz Ata</span>
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="cancelBtn">İptal</button>
+        <button type="submit" class="btn btn-primary" form="landingPageForm">
+          <i class="ph ph-check"></i>
+          <span>Kaydet</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Device Assign Modal -->
+  <div class="modal-overlay" id="deviceAssignModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <i class="ph ph-link"></i>
+          <span>Cihaz Ata</span>
+        </h2>
+        <button class="modal-close" id="closeDeviceAssignModal">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="device-select-list" id="deviceCheckboxes">
+          <!-- Device checkboxes will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="cancelDeviceAssignBtn">İptal</button>
+        <button type="button" class="btn btn-primary" id="saveDeviceAssignBtn">
+          <i class="ph ph-check"></i>
+          <span>Kaydet</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="script.js"></script>
+</body>
+</html>

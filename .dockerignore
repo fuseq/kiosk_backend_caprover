@@ -1,0 +1,53 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Local development
+.env
+.env.local
+.env.development
+.env.*.local
+
+# Documentation
+*.md
+!README.md
+
+# Tests
+test
+tests
+coverage
+.nyc_output
+
+# Build artifacts
+dist
+build
+
+# Docker
+docker-compose.yml
+docker-compose*.yml
+
+# Misc
+.editorconfig
+.eslintrc*
+.prettierrc*
+
+# Old data files
+data.json
