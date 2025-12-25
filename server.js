@@ -145,13 +145,18 @@ app.get('/api/devices/:deviceId/config', async (req, res) => {
     device.lastSeen = new Date();
     await device.save();
     
-    // Get landing page for this device
-    const landingPage = await LandingPage.getForDevice(deviceId);
+    // Sadece bu cihaza atanmış landing page'i bul (varsayılan yok)
+    const landingPage = await LandingPage.findOne({
+      devices: deviceId,
+      isActive: true
+    });
     
+    // Cihaza atanmış landing page yoksa null döndür
     if (!landingPage) {
       return res.json({
         landingPage: null,
-        message: 'No landing page available'
+        isAssigned: false,
+        message: 'No landing page assigned to this device'
       });
     }
     
@@ -159,7 +164,8 @@ app.get('/api/devices/:deviceId/config', async (req, res) => {
       landingPage: {
         id: landingPage._id,
         ...landingPage.toObject()
-      }
+      },
+      isAssigned: true
     });
   } catch (error) {
     console.error('Error getting device config:', error);
