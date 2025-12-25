@@ -267,15 +267,20 @@ app.delete('/api/devices/:deviceId', async (req, res) => {
 app.get('/api/landing-pages', async (req, res) => {
   try {
     const landingPages = await LandingPage.find({ isActive: true })
-      .populate('devices', 'name fingerprint status lastSeen')
       .sort({ createdAt: -1 });
     
     const landingPagesWithStats = landingPages.map(lp => ({
       id: lp._id,
-      ...lp.toObject(),
-      deviceIds: lp.devices.map(d => d._id),
+      name: lp.name,
+      description: lp.description,
+      slides: lp.slides,
+      transitionDuration: lp.transitionDuration,
+      deviceIds: lp.deviceIds || [],
       deviceCount: lp.deviceCount,
-      slideCount: lp.slideCount
+      slideCount: lp.slideCount,
+      isDefault: lp.isDefault,
+      createdAt: lp.createdAt,
+      updatedAt: lp.updatedAt
     }));
     
     res.json({ landingPages: landingPagesWithStats });
@@ -290,8 +295,7 @@ app.get('/api/landing-pages/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const landingPage = await LandingPage.findById(id)
-      .populate('devices', 'name fingerprint status lastSeen');
+    const landingPage = await LandingPage.findById(id);
     
     if (!landingPage) {
       return res.status(404).json({ error: 'Landing page not found' });
@@ -300,8 +304,14 @@ app.get('/api/landing-pages/:id', async (req, res) => {
     res.json({ 
       landingPage: {
         id: landingPage._id,
-        ...landingPage.toObject(),
-        deviceIds: landingPage.devices.map(d => d._id)
+        name: landingPage.name,
+        description: landingPage.description,
+        slides: landingPage.slides,
+        transitionDuration: landingPage.transitionDuration,
+        deviceIds: landingPage.deviceIds || [],
+        isDefault: landingPage.isDefault,
+        createdAt: landingPage.createdAt,
+        updatedAt: landingPage.updatedAt
       }
     });
   } catch (error) {
@@ -373,7 +383,7 @@ app.put('/api/landing-pages/:id', async (req, res) => {
     }
     
     if (deviceIds !== undefined) {
-      landingPage.devices = deviceIds;
+      landingPage.deviceIds = deviceIds;
     }
     
     await landingPage.save();
@@ -381,7 +391,11 @@ app.put('/api/landing-pages/:id', async (req, res) => {
     res.json({ 
       landingPage: {
         id: landingPage._id,
-        ...landingPage.toObject()
+        name: landingPage.name,
+        slides: landingPage.slides,
+        transitionDuration: landingPage.transitionDuration,
+        deviceIds: landingPage.deviceIds || [],
+        updatedAt: landingPage.updatedAt
       }
     });
   } catch (error) {
