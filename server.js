@@ -570,6 +570,44 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ============================================
+// Database Reset Endpoint (TEMPORARY - REMOVE IN PRODUCTION)
+// ============================================
+app.post('/api/admin/reset-database', async (req, res) => {
+  try {
+    const { confirmCode } = req.body;
+    
+    // Güvenlik için onay kodu gerekli
+    if (confirmCode !== 'RESET_DB_2024') {
+      return res.status(403).json({ error: 'Invalid confirmation code' });
+    }
+    
+    console.log('⚠️ DATABASE RESET INITIATED');
+    
+    // Tüm cihazları sil
+    const deviceResult = await Device.deleteMany({});
+    console.log(`🗑️ Deleted ${deviceResult.deletedCount} devices`);
+    
+    // Tüm landing page'leri sil
+    const lpResult = await LandingPage.deleteMany({});
+    console.log(`🗑️ Deleted ${lpResult.deletedCount} landing pages`);
+    
+    console.log('✅ DATABASE RESET COMPLETE');
+    
+    res.json({
+      success: true,
+      message: 'Database reset complete',
+      deleted: {
+        devices: deviceResult.deletedCount,
+        landingPages: lpResult.deletedCount
+      }
+    });
+  } catch (error) {
+    console.error('❌ Database reset error:', error);
+    res.status(500).json({ error: 'Failed to reset database' });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
