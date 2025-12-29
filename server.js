@@ -178,20 +178,29 @@ app.get('/api/devices/:deviceId/config', async (req, res) => {
       isActive: true
     });
     
+    // Device bilgisi (displayId dahil)
+    const deviceInfo = {
+      id: device._id,
+      displayId: device.displayId,
+      name: device.name
+    };
+    
     // Cihaza atanmış landing page yoksa null döndür
     if (!landingPage) {
-      console.log(`⚠️ No landing page assigned to device: ${deviceId}`);
+      console.log(`⚠️ No landing page assigned to device: ${deviceId} (displayId: ${device.displayId})`);
       return res.json({
+        device: deviceInfo,
         landingPage: null,
         isAssigned: false,
         message: 'No landing page assigned to this device'
       });
     }
     
-    console.log(`✅ Found landing page for device ${deviceId}: ${landingPage.name}`);
+    console.log(`✅ Found landing page for device ${deviceId} (displayId: ${device.displayId}): ${landingPage.name}`);
     console.log(`📷 Slides count: ${landingPage.slides?.length || 0}`);
     
     res.json({ 
+      device: deviceInfo,
       landingPage: {
         id: landingPage._id,
         name: landingPage.name,
