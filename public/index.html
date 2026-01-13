@@ -7,6 +7,13 @@
   <meta name="theme-color" content="#0a0a0f">
   <title>Inmapper Kiosk | Yönetim Paneli</title>
   
+  <!-- Inmapper Auth SDK -->
+  <script src="https://inmapper-otp.netlify.app/sdk/inmapper-auth.js"></script>
+  <script>
+    const auth = new InmapperAuth();
+    auth.protect();
+  </script>
+  
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
