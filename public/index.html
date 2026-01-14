@@ -10,7 +10,9 @@
   <!-- Inmapper Auth SDK -->
   <script src="https://inmapper-otp.netlify.app/sdk/inmapper-auth.js"></script>
   <script>
-    const auth = new InmapperAuth();
+    const auth = new InmapperAuth({
+      resourceId: 'kiosk-backend'
+    });
     auth.protect();
   </script>
   
