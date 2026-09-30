@@ -1,0 +1,16 @@
+{
+  "name": "venue-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mekan yoneticileri icin birim bilgisi bildirim araci — GeoJSON haritadan birim secip Google Sheets kaydini duzenler.",
+  "scripts": {
+    "dev": "npx --yes http-server . -p 8200 -c-1 -o",
+    "start": "npx --yes http-server . -p 8200 -c-1",
+    "check": "node tools/check-syntax.mjs",
+    "check:sheets": "node tools/check-sheets.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -24,7 +24,7 @@ FROM base AS deps
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # ============================================
 # Production stage
@@ -33,7 +33,7 @@ FROM base AS production
 
 # Set environment
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=8080
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -41,15 +41,17 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy application files
 COPY --chown=nodejs:nodejs . .
 
+# Venue haritaları GCS'te tutulur (VENUE_ASSETS_BUCKET); Cloud Run diski
+# efemeral olduğu için yerel bir storage dizini oluşturulmaz.
+
 # Switch to non-root user
 USER nodejs
 
 # Expose port
-EXPOSE 3000
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+# Cloud Run kendi startup/liveness probe'larını yönetir; Docker HEALTHCHECK
+# yok sayılır.
 
 # Start application with dumb-init
 ENTRYPOINT ["dumb-init", "--"]

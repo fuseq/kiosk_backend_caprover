@@ -52,6 +52,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${PORT:-3000}:3000"
+    volumes:
+      - venue_maps:/app/storage/venue-maps
     depends_on:
       mongodb:
         condition: service_healthy
@@ -69,6 +71,8 @@ services:
 # ============================================
 volumes:
   mongodb_data:
+    driver: local
+  venue_maps:
     driver: local
 
 # ============================================

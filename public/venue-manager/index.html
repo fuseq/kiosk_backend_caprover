@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Birim Yönetimi · Venue Manager</title>
+    <script>
+        (function () {
+            try {
+                var params = new URLSearchParams(location.search);
+                var theme = params.get('theme') || localStorage.getItem('inmapper-theme') || 'light';
+                if (theme !== 'dark' && theme !== 'light') theme = 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
+
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.20.0/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="src/styles/tokens.css" />
+    <link rel="stylesheet" href="src/styles/app.css" />
+    <link rel="stylesheet" href="src/styles/island.css" />
+</head>
+<body>
+    <header id="vmTopbar" class="vm-topbar"></header>
+
+    <main class="vm-stage">
+        <div id="vmMap" class="vm-map" role="application" aria-label="Mekan haritası"></div>
+
+        <aside id="vmIsland" aria-live="polite" aria-label="Birim ayrıntıları"></aside>
+
+        <div id="vmLoader" class="vm-loader">
+            <div class="vm-loader__spinner" aria-hidden="true"></div>
+            <p id="vmLoaderText" class="vm-loader__text">Yükleniyor…</p>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/@turf/turf@7.2.0/turf.min.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@5.20.0/dist/maplibre-gl.js"></script>
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sync Monitor</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --text: #e8eaed;
+      --muted: #9aa3b2;
+      --ok: #3dd68c;
+      --warn: #f5a524;
+      --bad: #f07178;
+      --line: #2a3140;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+    }
+    h1 { font-size: 18px; margin: 0 0 8px; font-weight: 600; }
+    .sub { color: var(--muted); margin-bottom: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
+    label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
+    input, select, button {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+    }
+    button { cursor: pointer; }
+    button:hover { border-color: #4b5568; }
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .ok { background: rgba(61, 214, 140, 0.15); color: var(--ok); }
+    .warn { background: rgba(245, 165, 36, 0.15); color: var(--warn); }
+    .bad { background: rgba(240, 113, 120, 0.15); color: var(--bad); }
+    .muted { background: rgba(154, 163, 178, 0.12); color: var(--muted); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 500; font-size: 12px; }
+    tr:last-child td { border-bottom: none; }
+    .meta { margin: 12px 0 16px; color: var(--muted); }
+    .err { color: var(--bad); margin: 12px 0; }
+    .spread { font-size: 16px; margin: 8px 0 16px; }
+  </style>
+</head>
+<body>
+  <h1>Sync Monitor</h1>
+  <p class="sub">Cihazların kampanya pozisyon telemetrisi — aynı mekândaki ekranlar aynı slide/offset mü?</p>
+
+  <div class="row">
+    <label>Venue ID
+      <input id="venueId" placeholder="Mongo venue ObjectId" size="28" />
+    </label>
+    <label>Eşik (ms)
+      <input id="threshold" type="number" value="1000" min="100" max="10000" step="100" style="width:100px" />
+    </label>
+    <label>Yenileme (sn)
+      <input id="interval" type="number" value="2" min="1" max="30" style="width:80px" />
+    </label>
+    <button id="startBtn" type="button">Başlat</button>
+    <button id="stopBtn" type="button">Durdur</button>
+  </div>
+
+  <div id="verdict" class="badge muted">BEKLENİYOR</div>
+  <div id="spread" class="spread"></div>
+  <div id="meta" class="meta"></div>
+  <div id="error" class="err"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Cihaz</th>
+        <th>Sync</th>
+        <th>Slide</th>
+        <th>Offset</th>
+        <th>Video t</th>
+        <th>Skew</th>
+        <th>Yaş</th>
+        <th>Playlist</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <script>
+    const TOKEN_KEY = 'inmapper-kiosk-token';
+    const ACTIVE_VENUE_KEY = 'inmapper-active-venue';
+    let timer = null;
+
+    const els = {
+      venueId: document.getElementById('venueId'),
+      threshold: document.getElementById('threshold'),
+      interval: document.getElementById('interval'),
+      startBtn: document.getElementById('startBtn'),
+      stopBtn: document.getElementById('stopBtn'),
+      verdict: document.getElementById('verdict'),
+      spread: document.getElementById('spread'),
+      meta: document.getElementById('meta'),
+      error: document.getElementById('error'),
+      tbody: document.getElementById('tbody'),
+    };
+
+    function getToken() {
+      return localStorage.getItem(TOKEN_KEY) || '';
+    }
+
+    function verdictClass(v) {
+      if (v === 'IN_SYNC') return 'ok';
+      if (v === 'SINGLE_DEVICE' || v === 'NO_DATA' || v === 'STALE') return 'muted';
+      if (v === 'DRIFT') return 'warn';
+      return 'bad';
+    }
+
+    function fmtMs(n) {
+      if (!Number.isFinite(n)) return '—';
+      return `${Math.round(n)} ms`;
+    }
+
+    function fmtSec(n) {
+      if (!Number.isFinite(n)) return '—';
+      return `${n.toFixed(2)} s`;
+    }
+
+    async function tick() {
+      const token = getToken();
+      if (!token) {
+        els.error.textContent = 'Panel yok — önce yönetim paneline giriş yapın (aynı tarayıcı).';
+        return;
+      }
+      const venueId = els.venueId.value.trim();
+      if (!venueId) {
+        els.error.textContent = 'Venue ID girin.';
+        return;
+      }
+      const threshold = els.threshold.value || '1000';
+      try {
+        const res = await fetch(`/api/devices/playback-status?venueId=${encodeURIComponent(venueId)}&thresholdMs=${encodeURIComponent(threshold)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          els.error.textContent = data.error || `HTTP ${res.status}`;
+          return;
+        }
+        els.error.textContent = '';
+        const c = data.comparison || {};
+        els.verdict.textContent = c.verdict || '?';
+        els.verdict.className = `badge ${verdictClass(c.verdict)}`;
+        const spread = c.spreadMs ?? c.projectedElapsedSpreadMs ?? c.projectedOffsetSpreadMs ?? c.offsetSpreadMs;
+        const raw = c.offsetSpreadMs;
+        els.spread.textContent = `offset farkı (hizalı): ${fmtMs(spread)} · ham: ${fmtMs(raw)} · video farkı: ${fmtMs(c.videoSpreadMs)} · eşik: ${fmtMs(c.thresholdMs || Number(threshold))}`;
+        els.meta.textContent = `${data.serverNow || ''} · rapor: ${c.reported || 0} · taze: ${c.fresh || 0} · karşılaştırılan: ${c.compared || 0} · pozisyonlar sunucu zamanına projekte edilir`;
+
+        els.tbody.innerHTML = (data.devices || []).map((d) => {
+          if (!d.hasReport) {
+            return `<tr>
+              <td>${escapeHtml(d.name || d.displayId || d.deviceId)}<br><span style="color:#9aa3b2">${escapeHtml(d.displayId || '')}</span></td>
+              <td colspan="7" style="color:#9aa3b2">henüz telemetri yok</td>
+            </tr>`;
+          }
+          const sig = (d.playlistSignature || '').slice(0, 28);
+          const idx = d.projectedIndex != null ? d.projectedIndex : d.index;
+          const off = d.projectedOffsetMs != null ? d.projectedOffsetMs : d.offsetMs;
+          return `<tr>
+            <td>${escapeHtml(d.name || d.displayId || d.deviceId)}<br><span style="color:#9aa3b2">${escapeHtml(d.displayId || '')}</span></td>
+            <td>${d.syncEnabled ? 'on' : 'off'}${d.stale ? ' · STALE' : ''}</td>
+            <td>${idx == null ? '—' : idx}</td>
+            <td>${fmtMs(off)}</td>
+            <td>${fmtSec(d.videoCurrentSec)}</td>
+            <td>${fmtMs(d.clockOffsetMs)}</td>
+            <td>${fmtMs(d.ageMs)}</td>
+            <td title="${escapeHtml(d.playlistSignature || '')}">${escapeHtml(sig)}${(d.playlistSignature || '').length > 28 ? '…' : ''}</td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        els.error.textContent = e.message || String(e);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function start() {
+      stop();
+      tick();
+      const sec = Math.max(1, Number(els.interval.value) || 2);
+      timer = setInterval(tick, sec * 1000);
+    }
+
+    function stop() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    els.startBtn.addEventListener('click', start);
+    els.stopBtn.addEventListener('click', stop);
+
+    const params = new URLSearchParams(location.search);
+    const fromQuery = params.get('venueId');
+    const saved = localStorage.getItem(ACTIVE_VENUE_KEY);
+    els.venueId.value = fromQuery || saved || '';
+    if (els.venueId.value && getToken()) start();
+  </script>
+</body>
+</html>

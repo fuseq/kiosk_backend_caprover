@@ -12,6 +12,22 @@ const slideSchema = new mongoose.Schema({
     required: [true, 'Image URL is required'],
     trim: true
   },
+  /** 'image' | 'video' — imageUrl alanı her iki medya için de kaynak URL taşır. */
+  mediaType: {
+    type: String,
+    enum: ['image', 'video'],
+    default: 'image',
+  },
+  /**
+   * Slide süresi (ms). Video için metadata veya panelden;
+   * boşsa kampanya transitionDuration kullanılır.
+   */
+  durationMs: {
+    type: Number,
+    default: null,
+    min: 1000,
+    max: 600000,
+  },
   title: {
     type: String,
     default: ''
@@ -24,6 +40,31 @@ const slideSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // En-boy oranı (örn. "16:9") ve kaynak boyutları. URL eklenirken admin
+  // panelde tarayıcı tarafından otomatik tespit edilip kaydedilir. Cihazın
+  // ekran oranıyla eşleştirme için kullanılır.
+  aspectRatio: {
+    type: String,
+    default: ''
+  },
+  width: {
+    type: Number,
+    default: 0
+  },
+  height: {
+    type: Number,
+    default: 0
+  },
+  // Görsel bazlı zamanlama (opsiyonel). Boşsa kampanya zamanlaması geçerli.
+  schedule: {
+    startDate: { type: Date, default: null },
+    endDate: { type: Date, default: null }
+  },
+  // Görsel bazlı manuel hedefleme: yalnızca bu cihaz gruplarında oynat.
+  // Boş dizi = kampanyanın tüm hedeflerinde (oran eşleşmesine göre) oynat.
+  targetGroupIds: [{
+    type: String
+  }],
   order: {
     type: Number,
     default: 0
@@ -31,6 +72,15 @@ const slideSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  /** Toplu yükleme grubu — panel accordion'u için; oynatma yok sayar */
+  mediaGroupId: {
+    type: String,
+    default: ''
+  },
+  mediaGroupTitle: {
+    type: String,
+    default: ''
   }
 }, { 
   timestamps: true,
@@ -38,6 +88,11 @@ const slideSchema = new mongoose.Schema({
 });
 
 const landingPageSchema = new mongoose.Schema({
+  venueId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Venue',
+    index: true
+  },
   name: {
     type: String,
     required: true,
@@ -51,6 +106,10 @@ const landingPageSchema = new mongoose.Schema({
   deviceIds: [{
     type: String
   }],
+  // Hedeflenen cihaz grupları (DeviceGroup._id)
+  groupIds: [{
+    type: String
+  }],
   slides: [slideSchema],
   transitionDuration: {
     type: Number,
@@ -58,10 +117,45 @@ const landingPageSchema = new mongoose.Schema({
     min: 1000,
     max: 60000
   },
+  /**
+   * Clock-based multi-device sync. When enabled, kiosks seek playlist position
+   * from (now - epoch) % totalDuration instead of a local setInterval loop.
+   */
+  sync: {
+    enabled: { type: Boolean, default: false },
+    epochMode: {
+      type: String,
+      enum: ['midnight', 'campaignStart', 'absolute'],
+      default: 'midnight',
+    },
+    epochAt: { type: Date, default: null },
+    tickMs: { type: Number, default: 250, min: 100, max: 2000 },
+  },
   transitionEffect: {
     type: String,
     enum: ['fade', 'slide', 'zoom'],
     default: 'slide'
+  },
+  // Kiosk landing chrome (bağımsız):
+  showNavbar: {
+    type: Boolean,
+    default: true
+  },
+  showSidePanel: {
+    type: Boolean,
+    default: true
+  },
+  // Legacy özet: ikisi de kapalı → 'fullscreen', aksi halde 'panel'
+  displayMode: {
+    type: String,
+    enum: ['panel', 'fullscreen'],
+    default: 'panel'
+  },
+  /** Medya contain olduğunda kalan bar rengi */
+  letterboxColor: {
+    type: String,
+    enum: ['black', 'white'],
+    default: 'black'
   },
   isDefault: {
     type: Boolean,
@@ -101,13 +195,12 @@ landingPageSchema.virtual('slideCount').get(function() {
   return this.slides ? this.slides.filter(s => s.isActive).length : 0;
 });
 
-// Ensure only one default landing page
+// Ensure only one default landing page per venue
 landingPageSchema.pre('save', async function(next) {
   if (this.isDefault && this.isModified('isDefault')) {
-    await this.constructor.updateMany(
-      { _id: { $ne: this._id }, isDefault: true },
-      { isDefault: false }
-    );
+    const filter = { _id: { $ne: this._id }, isDefault: true };
+    if (this.venueId) filter.venueId = this.venueId;
+    await this.constructor.updateMany(filter, { isDefault: false });
   }
   next();
 });
@@ -124,60 +217,62 @@ landingPageSchema.pre('save', function(next) {
   next();
 });
 
-// Static method to get default landing page
-landingPageSchema.statics.getDefault = async function() {
-  let defaultPage = await this.findOne({ isDefault: true, isActive: true });
-  
+// Static method to get default landing page for a venue
+landingPageSchema.statics.getDefault = async function(venueId = null) {
+  const filter = { isDefault: true, isActive: true };
+  if (venueId) filter.venueId = venueId;
+  let defaultPage = await this.findOne(filter);
+
   if (!defaultPage) {
-    // Return first active landing page
-    defaultPage = await this.findOne({ isActive: true }).sort({ createdAt: 1 });
+    const fallbackFilter = { isActive: true };
+    if (venueId) fallbackFilter.venueId = venueId;
+    defaultPage = await this.findOne(fallbackFilter).sort({ createdAt: 1 });
   }
-  
+
   return defaultPage;
 };
 
-// Static method to get landing page for a device
-landingPageSchema.statics.getForDevice = async function(deviceId) {
-  // First, try to find a landing page assigned to this device
-  let landingPage = await this.findOne({
-    deviceIds: deviceId,
-    isActive: true
-  });
-  
-  // If not found, return default
+// Static method to get landing page for a device (venue-scoped)
+landingPageSchema.statics.getForDevice = async function(deviceId, venueId = null) {
+  const filter = { deviceIds: deviceId, isActive: true };
+  if (venueId) filter.venueId = venueId;
+  let landingPage = await this.findOne(filter);
+
   if (!landingPage) {
-    landingPage = await this.getDefault();
+    landingPage = await this.getDefault(venueId);
   }
-  
+
   return landingPage;
 };
 
-// Static method to assign devices to landing page
-landingPageSchema.statics.assignDevices = async function(landingPageId, newDeviceIds) {
+// Static method to assign devices to landing page (same venue only)
+landingPageSchema.statics.assignDevices = async function(landingPageId, newDeviceIds, venueId = null) {
   console.log(`📋 Assigning devices to landing page ${landingPageId}:`, newDeviceIds);
-  
-  // Remove these devices from other landing pages
+
+  const pullFilter = { _id: { $ne: landingPageId } };
+  if (venueId) pullFilter.venueId = venueId;
   await this.updateMany(
-    { _id: { $ne: landingPageId } },
+    pullFilter,
     { $pull: { deviceIds: { $in: newDeviceIds } } }
   );
-  
-  // Update this landing page with new deviceIds (replace all)
+
   const landingPage = await this.findByIdAndUpdate(
     landingPageId,
     { $set: { deviceIds: newDeviceIds } },
     { new: true }
   );
-  
+
   console.log(`✅ Devices assigned. Total: ${landingPage?.deviceIds?.length || 0}`);
-  
+
   return landingPage;
 };
 
 // Indexes
+landingPageSchema.index({ venueId: 1, isDefault: 1 });
 landingPageSchema.index({ isDefault: 1 });
 landingPageSchema.index({ isActive: 1 });
 landingPageSchema.index({ deviceIds: 1 });
+landingPageSchema.index({ groupIds: 1 });
 landingPageSchema.index({ createdAt: -1 });
 
 const LandingPage = mongoose.model('LandingPage', landingPageSchema);

@@ -51,3 +51,6 @@ docker-compose*.yml
 
 # Old data files
 data.json
+
+# Runtime venue map uploads (artık GCS'te tutuluyor)
+storage

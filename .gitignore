@@ -32,6 +32,9 @@ Thumbs.db
 dist/
 build/
 
+# Runtime venue map uploads
+storage/venue-maps/
+
 
 
 

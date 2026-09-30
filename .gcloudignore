@@ -1,0 +1,36 @@
+# Cloud Build'e gönderilen kaynak paketinden çıkarılacaklar.
+# Bu dosya varsa gcloud .gitignore'u kullanmaz, bu yüzden liste eksiksiz olmalı.
+
+.git
+.gitignore
+
+node_modules
+npm-debug.log*
+
+# Sırlar asla imaja girmez; Cloud Run bunları Secret Manager'dan alır.
+.env
+.env.local
+.env.development
+.env.*.local
+
+# Venue haritaları GCS'te (VENUE_ASSETS_BUCKET)
+storage
+
+test
+tests
+coverage
+.nyc_output
+
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+logs
+*.log
+
+docker-compose.yml
+docker-compose*.yml
+captain-definition
