@@ -106,12 +106,20 @@ let tenantUsersIndex = [];
 function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 function setToken(t) { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); }
 
-/** fetch + Authorization header; 401'de login ekranına düşer. */
+/** fetch + Authorization header; 401'de bir kez yeniler, olmazsa login. */
 async function authFetch(url, options = {}) {
-  const headers = { ...(options.headers || {}) };
+  const send = (token) => {
+    const headers = { ...(options.headers || {}) };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return fetch(url, { ...options, headers });
+  };
   const token = getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(url, { ...options, headers });
+  let res = await send(token);
+  if (res.status === 401) {
+    await refreshSessionToken();
+    const next = getToken();
+    if (next && next !== token) res = await send(next);
+  }
   if (res.status === 401) {
     showLogin();
     throw new Error('Oturum gerekli');
@@ -301,6 +309,7 @@ async function initializeApp() {
   initVenueManagerPage();
   initTenantsPage();
   initLogin();
+  startSessionKeepAlive();
 
   const ok = await checkSession();
   if (!ok) { showLogin(); return; }
@@ -318,6 +327,35 @@ async function initializeApp() {
 // ============================================
 // Login / session
 // ============================================
+
+/**
+ * Token'ı süresi dolmadan tazeler; panel açık kaldıkça oturum düşmez.
+ * Süresi zaten dolmuş token yenilenmez (normal 401 akışı login'e götürür).
+ */
+async function refreshSessionToken() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const body = await res.json().catch(() => null);
+    if (body?.token && getToken() === token) setToken(body.token);
+  } catch {
+    /* ağ hatası: bir sonraki turda tekrar denenir */
+  }
+}
+
+function startSessionKeepAlive() {
+  setInterval(refreshSessionToken, 10 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshSessionToken();
+  });
+  refreshSessionToken();
+}
+
 async function checkSession() {
   if (!getToken()) return false;
   try {

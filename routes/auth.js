@@ -89,6 +89,22 @@ router.post('/login', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/auth/refresh — a fresh token for a still-valid one. The panel and
+ * the editor call it on a timer, so a tab left open never runs out of session
+ * mid-edit; a token that has already expired is not renewed.
+ */
+router.post('/refresh', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.isActive === false) return res.status(401).json({ error: 'Geçersiz oturum' });
+    res.json({ token: signToken(user) });
+  } catch (err) {
+    console.error('POST /api/auth/refresh', err);
+    res.status(500).json({ error: 'Oturum yenilenemedi' });
+  }
+});
+
 /** GET /api/auth/me */
 router.get('/me', requireAuth, async (req, res) => {
   const user = await User.findById(req.user.id);

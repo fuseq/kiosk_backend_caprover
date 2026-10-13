@@ -120,7 +120,7 @@ const venueSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: null },
     updatedBy: { type: String, default: '' },
   },
-  /** Son yayınlanmış içerik sürümleri, en yenisi başta (en fazla 3). */
+  /** Son yayınlanmış içerik sürümleri, en yenisi başta (en fazla MAX_MAP_HISTORY). */
   mapHistory: { type: [mapHistoryEntrySchema], default: [] },
   /** Venue Manager'da müşterinin görebileceği/düzenleyebileceği Sheet kolonları. */
   unitAttributes: { type: [unitAttributeSchema], default: [] },

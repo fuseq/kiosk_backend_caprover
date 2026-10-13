@@ -73,10 +73,17 @@ test('fingerprint ignores timestamps but sees map and config changes', () => {
 });
 
 test('planHistoryPush keeps the newest MAX entries', () => {
-  const { kept, dropped } = planHistoryPush([{ id: 'b' }, { id: 'c' }, { id: 'd' }], { id: 'a' });
-  assert.equal(MAX_MAP_HISTORY, 3);
-  assert.deepEqual(kept.map(e => e.id), ['a', 'b', 'c']);
-  assert.deepEqual(dropped.map(e => e.id), ['d']);
+  assert.equal(MAX_MAP_HISTORY, 10);
+  const history = Array.from({ length: MAX_MAP_HISTORY }, (_, i) => ({ id: `h${i}` }));
+  const { kept, dropped } = planHistoryPush(history, { id: 'new' });
+  assert.equal(kept.length, MAX_MAP_HISTORY);
+  assert.equal(kept[0].id, 'new');
+  assert.equal(kept[MAX_MAP_HISTORY - 1].id, `h${MAX_MAP_HISTORY - 2}`);
+  assert.deepEqual(dropped.map(e => e.id), [`h${MAX_MAP_HISTORY - 1}`]);
+
+  const small = planHistoryPush([{ id: 'b' }, { id: 'c' }, { id: 'd' }], { id: 'a' }, 3);
+  assert.deepEqual(small.kept.map(e => e.id), ['a', 'b', 'c']);
+  assert.deepEqual(small.dropped.map(e => e.id), ['d']);
 });
 
 test('changed content is archived with the previous map and config', async () => {
@@ -121,17 +128,20 @@ test('a version identical to the newest entry is not duplicated', async () => {
   assert.deepEqual(v.mapHistory.map(e => e.id), ['x']);
 });
 
-test('fourth change drops the oldest version', async () => {
+test('one change past the limit drops the oldest version', async () => {
   const deps = memoryDeps();
   const v = venueWith(deps);
   const allDropped = [];
-  for (let i = 2; i <= 5; i++) {
+  for (let i = 2; i <= MAX_MAP_HISTORY + 2; i++) {
     const snap = await captureMapSnapshot(v, deps);
     v.geojson = { ...v.geojson, checksum: `c${i}` };
     allDropped.push(...await commitMapSnapshot(v, snap, {}, deps));
   }
-  assert.equal(v.mapHistory.length, 3);
-  assert.deepEqual(v.mapHistory.map(e => e.checksum), ['c4', 'c3', 'c2']);
+  assert.equal(v.mapHistory.length, MAX_MAP_HISTORY);
+  assert.deepEqual(
+    v.mapHistory.map(e => e.checksum),
+    Array.from({ length: MAX_MAP_HISTORY }, (_, i) => `c${MAX_MAP_HISTORY + 1 - i}`),
+  );
   assert.deepEqual(allDropped.map(e => e.checksum), ['c1']);
 });
 

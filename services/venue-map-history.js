@@ -5,7 +5,7 @@
  * öncesinde o anki içerik `venue-maps/<venueId>/history/<id>/` altına
  * kopyalanır; Venue belgesinde yalnızca küçük bir üstveri satırı tutulur.
  * Config Mongo'ya değil depoya yazılır: `GET /api/venues` her venue'yu tam
- * döndürüyor, üç config kopyası listeyi şişirirdi.
+ * döndürüyor, config kopyaları listeyi şişirirdi.
  *
  * Sıra: yakala (eski içerik okunur) → belgeyi bellekte değiştir → işle
  * (içerik gerçekten değiştiyse kopyayı yaz) → yeni haritayı yaz → kaydet →
@@ -15,7 +15,7 @@
 
 const crypto = require('crypto');
 
-const MAX_MAP_HISTORY = 3;
+const MAX_MAP_HISTORY = 10;
 const HISTORY_PREFIX = 'venue-maps';
 const HISTORY_REASONS = new Set(['save', 'url', 'restore', 'delete']);
 
